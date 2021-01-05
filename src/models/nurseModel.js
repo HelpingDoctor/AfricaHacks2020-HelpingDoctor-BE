@@ -1,0 +1,57 @@
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const Schema = mongoose.Schema;
+
+const NurseSchema = new Schema({
+  firstName: {
+    type: String,
+    required: [true, "firstname is required"]
+  },
+  lastName: {
+    type: String,
+    required: [true, "firstname is required"]
+  },
+  email:{
+    type: String,
+    required: [true, "email is required"]
+  },
+  password: {
+    type: String,
+    required: [true, "password is required"]
+  },
+  role:{
+    enum:[]
+  }
+})
+
+NurseSchema.pre('save', function (next) {
+    var user = this;
+    if (this.isModified('password') || this.isNew) {
+        bcrypt.genSalt(10, function (err, salt) {
+            if (err) {
+                return next(err);
+            }
+            bcrypt.hash(user.password, salt, null, function (err, hash) {
+                if (err) {
+                    return next(err);
+                }
+                user.password = hash;
+                next();
+            });
+        });
+    } else {
+        return next();
+    }
+});
+
+NurseSchema.methods.comparePassword = function (password, cb) {
+    bcrypt.compare(password, this.password, function (err, isMatch) {
+        if (err) {
+            return cb(err);
+        }
+        cb(null, isMatch);
+    });
+};
+
+const Nurse = mongoose.model("Nurse", NurseSchema);
+module.exports = Nurse
